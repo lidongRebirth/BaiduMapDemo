@@ -4,15 +4,21 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -85,23 +91,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.btn_request:
-//                boolean permission= permissionRequest();    //false为未申请权限，true为权限都已申请
-//                if(permission){
-//                    Toast.makeText(getApplicationContext(),"请开启全部权限",Toast.LENGTH_SHORT).show();
-//                    return;
-//                }else {
-//                    requestLocation();
-//                }
-                permissionsChecked();
+            case R.id.btn_request:          //获取信息
+                permissionsChecked();       //权限申请
                 break;
-            case R.id.btn_move:
-                BDLocation bdLocation = new BDLocation();
-                bdLocation.setLongitude(Double.parseDouble(longitude.getText().toString()));
-                bdLocation.setLatitude(Double.parseDouble(latitude.getText().toString()));
-                move(bdLocation);
+            case R.id.btn_move:                                 //移动到指定经纬度位置
+                if(TextUtils.isEmpty(longitude.getText())||TextUtils.isEmpty(latitude.getText())){
+                    Toast.makeText(getApplicationContext(),"请输入经纬度信息",Toast.LENGTH_SHORT).show();
+                }else {
+                    BDLocation bdLocation = new BDLocation();
+                    bdLocation.setLongitude(Double.parseDouble(longitude.getText().toString()));
+                    bdLocation.setLatitude(Double.parseDouble(latitude.getText().toString()));
+                    move(bdLocation);
+                }
                 break;
-            case R.id.btn_jump:
+            case R.id.btn_jump://跳转至百度地图客户端
                 if(isInstallByread("com.baidu.BaiduMap")){
                     Toast.makeText(getApplicationContext(),"已安装百度地图",Toast.LENGTH_SHORT).show();
                     try {
@@ -117,29 +120,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
             case R.id.btn_jump_navi:        //跳转并导航
-                if(isInstallByread("com.baidu.BaiduMap")){
-                    Intent i1 = new Intent();
-                    // 驾车导航
-                    i1.setData(Uri.parse("baidumap://map/navi?location="+latitude.getText().toString()+","+longitude.getText().toString()+"&src=andr.baidu.openAPIdemo"));
-                    /**
-                     * intent = Intent.getIntent("intent://map/direction?origin=latlng:34.264642646862,108.95108518068|nam
-                     e:我家&destination=大雁塔&mode=driving&region=西安&src=yourCompanyName|yourAppName#Inten
-                     t;scheme=bdapp;package=com.baidu.BaiduMap;end");
-                     */
-                    Intent intent = new Intent();
-                    intent.setData(Uri.parse("baidumap://map/navi?origin=latlng:"+latitude.getText().toString()+","+longitude.getText().toString()+"|name:我&destination=公司&mode=driving;scheme=bdapp;package=com.baidu.BaiduMap;end"));
-
-
-                    startActivity(i1);
-                }else {
-                    Toast.makeText(getApplicationContext(),"请安装百度地图",Toast.LENGTH_SHORT).show();
-
-                }
+                initPopWindow();
                 break;
             default:
                 break;
         }
     }
+    //判断是否安装某应用
     private boolean isInstallByread(String packageName) {
         PackageManager packageManager = getApplicationContext().getPackageManager();
         List<PackageInfo> packageInfos = packageManager.getInstalledPackages(0);        //获取已安装程序的包信息
@@ -152,12 +139,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         //判断packageNames中是否有目标程序的包名，有为true，无为false
        return packageNames.contains(packageName);
-
-
-
-
-
     }
+    //权限申请
     public  void permissionsChecked(){
         List<String> permissionList = new ArrayList<>();
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
@@ -179,18 +162,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-//    public boolean permissionRequest() {
-//        int permission1 = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-//        int permission2 = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
-//        int permission3 = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-//        if(permission1  !=  PackageManager.PERMISSION_GRANTED|| permission2!=PackageManager.PERMISSION_GRANTED||permission3!=PackageManager.PERMISSION_GRANTED){
-//            ActivityCompat.requestPermissions(this, permissions, 1);       //有一个不在就申请权限
-//            return false;
-//        }else {
-//            return true;
-//        }
-//    }
-
     //发起请求
     public void requestLocation() {
         initLocation();
@@ -202,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LocationClientOption option = new LocationClientOption();
         option.setScanSpan(5000);           //每隔5秒扫描一次
         option.setIsNeedAddress(true);      //需要具体的位置信息
-        option.setCoorType("bd09ll");       //设置此才会在自己的位置中来，才会准确
+        option.setCoorType("bd09ll");       //设置此才会在自己的位置中来，才会准确!!!!
         mlocationClient.setLocOption(option);
     }
     //将地图移动自己的位置上来
@@ -221,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         MyLocationData locationData=locationBuilder.build();//build方法用来生成一个MyLocationData实例
         baiduMap.setMyLocationData(locationData);
     }
+    //移动到指定位置
     public void move(BDLocation bdLocation){
         Toast.makeText(getApplicationContext(),"移动",Toast.LENGTH_SHORT).show();
         LatLng latLng=new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude());       //存放经纬度
@@ -234,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         MyLocationData locationData=locationBuilder.build();//build方法用来生成一个MyLocationData实例
         baiduMap.setMyLocationData(locationData);
     }
-
+    //监听器
     public class MyLocationListener extends BDAbstractLocationListener {
         @Override
         public void onReceiveLocation(final BDLocation bdLocation) {
@@ -242,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void run() {
                     Log.i(TAG, "run: 线程中赋值");
-                    tv_location.append("经度：" + bdLocation.getLongitude() + "纬度：" + bdLocation.getLatitude()+"国家："+bdLocation.getCountry()+"省："+bdLocation.getProvince()+"市"+bdLocation.getCity()+"区/县:"+bdLocation.getDistrict()+"街道："+bdLocation.getStreet()+"详细地址信息："+bdLocation.getAddress());
+                    tv_location.append("经度：" + bdLocation.getLongitude()+"\n" + "纬度：" + bdLocation.getLatitude()+"\n"+"国家："+bdLocation.getCountry()+"\n"+"省："+bdLocation.getProvince()+"\n"+"市"+bdLocation.getCity()+"\n"+"区/县:"+bdLocation.getDistrict()+"\n"+"街道："+bdLocation.getStreet()+"\n"+"详细地址信息："+bdLocation.getAddrStr());
                     myBDLocation = bdLocation;
                 }
             });
@@ -252,8 +224,105 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    //*-------------------------------------------------------------------------------
+    //绘制悬浮框
+    public void initPopWindow() {
+        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.location_popwindow, null, false);
+        Button btnBaidu = view.findViewById(R.id.btn_baidu);
+        Button btnGaode = view.findViewById(R.id.btn_gaode);
+        Button btnTencent = view.findViewById(R.id.btn_tencent);
+        View view1 = view.findViewById(R.id.view);
+        final PopupWindow popWindow = new PopupWindow(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, true);
+        //点击外面popupWindow消失
+        popWindow.setOutsideTouchable(true);
 
+        view1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popWindow.dismiss();
+            }
+        });
 
+        popWindow.setBackgroundDrawable(new ColorDrawable(0x00000000));    //要为popWindow设置一个背景才有效
+        //设置popupWindow显示的位置，参数依次是参照View，x轴的偏移量，y轴的偏移量
+        popWindow.showAtLocation(view, Gravity.BOTTOM, 0, 0);
+        popWindow.setAnimationStyle(R.style.anim_menu_bottombar);
+
+        //百度
+        btnBaidu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isInstallByread("com.baidu.BaiduMap")) {
+                    if(TextUtils.isEmpty(longitude.getText())||TextUtils.isEmpty(latitude.getText())){
+                        Toast.makeText(getApplicationContext(), "请输入经纬度", Toast.LENGTH_SHORT).show();
+                    }else {
+                        Intent i1 = new Intent();
+                        //打开App汽车导航
+                        i1.setData(Uri.parse("baidumap://map/navi?location="+Double.parseDouble(latitude.getText().toString())+","+Double.parseDouble(longitude.getText().toString())+"&src=andr.baidu.openAPIdemo"));
+                        startActivity(i1);
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "请安装百度地图", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        //高德
+        btnGaode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (isInstallByread("com.autonavi.minimap")) {
+                    if(TextUtils.isEmpty(longitude.getText())||TextUtils.isEmpty(latitude.getText())){
+                        Toast.makeText(getApplicationContext(), "请输入经纬度", Toast.LENGTH_SHORT).show();
+
+                    }else {
+                        LatLng endPoint = BD2GCJ(Double.parseDouble(latitude.getText().toString()),Double.parseDouble(longitude.getText().toString()));//坐标转换终点位置
+                        StringBuffer stringBuffer = new StringBuffer("androidamap://navi?sourceApplication=").append("amap");
+                        stringBuffer.append("&lat=").append(endPoint.latitude)
+                                .append("&lon=").append(endPoint.longitude)
+                                .append("&dev=").append(0)
+                                .append("&style=").append(2);
+                        Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(stringBuffer.toString()));
+                        intent.setPackage("com.autonavi.minimap");
+                        startActivity(intent);
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "请安装高德地图", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        //腾讯
+        btnTencent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isInstallByread("com.tencent.map")) {
+                    if(TextUtils.isEmpty(longitude.getText())||TextUtils.isEmpty(latitude.getText())){
+                        Toast.makeText(getApplicationContext(), "请输入经纬度", Toast.LENGTH_SHORT).show();
+
+                    }else {
+                        LatLng endPoint = BD2GCJ(Double.parseDouble(latitude.getText().toString()),Double.parseDouble(longitude.getText().toString()));//坐标转换
+                        StringBuffer stringBuffer = new StringBuffer("qqmap://map/routeplan?type=drive")
+                                .append("&tocoord=").append(endPoint.latitude).append(",").append(endPoint.longitude);
+                        Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(stringBuffer.toString()));
+                        startActivity(intent);
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "请安装腾讯地图", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    //坐标系转化BD09LL百度坐标系转化为GCJ02腾讯、高德坐标系
+    public LatLng BD2GCJ(double latitude, double longitude) {
+        double x = longitude - 0.0065, y = latitude - 0.006;
+        double z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * Math.PI);
+        double theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * Math.PI);
+
+        double lng = z * Math.cos(theta);//lng
+        double lat = z * Math.sin(theta);//lat
+        return new LatLng(lat, lng);
+    }
 
     @Override
     protected void onResume() {

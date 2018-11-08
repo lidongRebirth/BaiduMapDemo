@@ -8,7 +8,7 @@
     tools:context=".MainActivity">
     <Button
         android:id="@+id/btn_request"
-        android:text="获取信息"
+        android:text="获取信息并移动地图"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
    <TextView
@@ -31,6 +31,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:inputType="number"
             />
     </LinearLayout>
     <Button
@@ -40,12 +41,12 @@
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/btn_jump"
-        android:text="跳转至网页或客户端"
+        android:text="跳转至百度地图客户端"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/btn_jump_navi"
-        android:text="跳转并导航"
+        android:text="跳转并导航（请填写经纬度）"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
     <com.baidu.mapapi.map.MapView

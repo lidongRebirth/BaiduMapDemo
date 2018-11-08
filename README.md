@@ -1,4 +1,5 @@
 # 百度地图相关配置、供下次使用（详细）
+[APK下载](https://github.com/myfittinglife/MarkDown-Resource/blob/master/%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEDemo.apk)
 
 ### 1. 百度控制台创建应用
 
@@ -229,36 +230,5 @@ public class DemoApplication extends Application {
 		}
 	}
 	
-```
-
-## 敲代码遇到的问题及使用的方法
-
-- 地图截图(MapView必须显示才能够截图，若为GONE则无法截图)
-
-```java
-baiduMap.snapshotScope(null, new BaiduMap.SnapshotReadyCallback() {
-@Override
-public void onSnapshotReady(Bitmap bitmap) {
-	imageView.setImageBitmap(picbitmap);
-	}
-});
-```
-
-- 字符串转换为Bitmap类型
-
-```java
- public Bitmap StringToBitmap(String imgStr){
-        // 将字符串转换成Bitmap类型
-        Bitmap bitmap = null;
-        try {
-            byte[] bitmapArray;
-            bitmapArray = Base64.decode(imgStr, Base64.DEFAULT);
-            bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0,
-                    bitmapArray.length);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return bitmap;
-    }
 ```
 

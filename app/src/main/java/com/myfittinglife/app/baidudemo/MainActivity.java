@@ -6,6 +6,9 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -142,9 +145,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     //权限申请
     public  void permissionsChecked(){
+
+        //针对android8.0的开启位置服务申请
+//        if(!isLocationEnabled()){
+//            Toast.makeText(getApplicationContext(),"请开启位置服务",Toast.LENGTH_SHORT).show();
+//            //*跳转到系统设置来开启位置服务
+//            Intent intent =  new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//            startActivity(intent);
+//        }
         List<String> permissionList = new ArrayList<>();
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
             permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        //安卓8.0统一权限组的也需要单独申请，但一个组的只会弹一个框
+        if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+            permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
         }
         if(ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED){
             permissionList.add(Manifest.permission.READ_PHONE_STATE);
@@ -158,8 +173,61 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.i(TAG, "setPermissions: 未全部申请");
         }else {
             Log.i(TAG, "setPermissions: 已全部申请");
-            requestLocation();
+            if(isLocationEnabled()){
+                requestLocation();
+            }else {
+                Intent intent =  new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
         }
+    }
+    /**
+     * 判断定位服务是否开启,进入系统设置里来设置
+     * @return true 表示开启
+     */
+    public boolean isLocationEnabled() {
+        int locationMode = 0;
+        String locationProviders;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            try {
+                locationMode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE);
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+                return false;
+            }
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+        } else {
+            locationProviders = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case 1:
+                Log.i(TAG, "onRequestPermissionsResult: "+grantResults.length);
+                if(grantResults.length>0){
+                    for(int result:grantResults){
+                        if(result!=PackageManager.PERMISSION_GRANTED){
+                            Toast.makeText(this,"必须同意所有权限",Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+                    if(isLocationEnabled()){
+                        requestLocation();
+                    }else {
+                        Toast.makeText(getApplicationContext(),"请开启位置服务",Toast.LENGTH_SHORT).show();
+                        Intent intent =  new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(intent);
+                    }
+                }else{
+                    Toast.makeText(getApplicationContext(),"发生未知错误",Toast.LENGTH_SHORT).show();
+                }
+                break;
+        }
+
     }
 
     //发起请求
